@@ -1,0 +1,495 @@
+<style>
+:root{--mono:ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;--display:"Futura", "Avenir Next", "Century Gothic", "Trebuchet MS", sans-serif}:root[data-theme=light]{--paper:#efe8d9;--ink:#080808;--ink-2:#2c2c2c;--muted:#666;--chip:#d5d6db;--accent:#9bf00b;--accent-ink:#476e13}:root[data-theme=dark]{--paper:#080808;--ink:#e7efe8;--ink-2:#e7efe8;--muted:#787878;--chip:#2c2c2c;--accent:#90f910;--accent-ink:#90f910}:root[data-theme=green]{--paper:#082b0b;--ink:#d9f5d2;--ink-2:#d9f5d2;--muted:#859987;--chip:#2e4c31;--accent:#90f910;--accent-ink:#90f910}*{box-sizing:border-box}html,body{background:var(--paper);height:100%;color:var(--ink);margin:0;transition:background-color .4s,color .4s;overflow:hidden}#field{touch-action:none;width:100vw;height:100vh;display:block;position:fixed;inset:0}.hud{pointer-events:none;font-family:var(--mono);text-transform:uppercase;color:var(--ink-2);font-size:10px;line-height:13px;position:fixed;inset:0}.brand{position:absolute;top:50%;left:clamp(20px,5vw,64px);transform:translateY(-50%)}.brand h1{font-family:var(--display);letter-spacing:.06em;color:var(--ink);margin:0;font-size:clamp(88px,14vw,200px);font-weight:500;line-height:.9}.tagline{letter-spacing:.32em;color:var(--ink);margin:18px 0 0;font-size:12px}.tele{border-left:1px solid var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums;padding-left:9px;position:absolute}.tele-system{color:var(--muted);border-left:0;padding-left:0;top:18%;left:clamp(20px,5vw,64px)}.tele-source{top:18%;left:38%}.tele-signal{top:18%;right:clamp(20px,5vw,64px)}.tele-operator{bottom:12%;right:clamp(20px,5vw,64px)}.keys{pointer-events:auto;gap:6px;display:flex;position:absolute;bottom:18px;right:clamp(12px,3vw,32px)}.keys button{font:inherit;letter-spacing:.06em;color:var(--ink-2);cursor:pointer;background:0 0;border:0;align-items:stretch;padding:0;display:inline-flex}.keys kbd,.keys span{font:inherit;padding:3px 7px}.keys kbd{background:var(--chip)}.keys button[aria-pressed=true] span{background:var(--ink);color:var(--paper)}.keys button:focus-visible{outline:1px solid var(--accent);outline-offset:2px}.fallback{text-align:center;font-family:var(--mono);position:fixed;inset:auto 0 40%}@media (width<=720px){.brand{top:22%;transform:none}.brand h1{font-size:72px}.tagline{letter-spacing:.2em;font-size:10px}.tele-source,.tele-system{display:none}.tele-signal{top:16px}.tele-operator{bottom:56px}.keys{flex-wrap:wrap;justify-content:center;left:12px;right:12px}}
+
+</style>
+<script>document.documentElement.setAttribute("data-theme","light");document.documentElement.classList.add("crt");</script>
+<canvas id="field" aria-hidden="true"></canvas>
+
+    <main class="hud">
+      <header class="brand" data-quiet>
+        <h1>DCC</h1>
+        <p class="tagline">Rack. Cube. Desert. Rendered as text.</p>
+      </header>
+
+      <section class="tele tele-system" data-quiet aria-label="System">
+        <div>DCC/CORE</div>
+        <div>BUILD 0.1.0</div>
+        <div>RENDER <span data-t="fps">--</span> FPS</div>
+        <div>GRID <span data-t="grid">--</span></div>
+        <div>INPUT <span data-t="input">IDLE</span></div>
+      </section>
+
+      <section class="tele tele-source" data-quiet aria-label="Source">
+        <div>SCENE: <span data-t="scene">--</span></div>
+        <div>CLASS: <span data-t="kind">--</span></div>
+        <div>T+ <span data-t="elapsed">00:00:00</span></div>
+        <div>FRAME <span data-t="frame">000000</span></div>
+      </section>
+
+      <section class="tele tele-signal" data-quiet aria-label="Signal">
+        <div>LUMA <span data-t="luma">0.00</span></div>
+        <div>MOTION <span data-t="motion">00.0%</span></div>
+        <div>X <span data-t="x">----</span></div>
+        <div>Y <span data-t="y">----</span></div>
+      </section>
+
+      <section class="tele tele-operator" data-quiet aria-label="Operator">
+        <div>OPERATOR</div>
+        <div>LOCAL <span data-t="time">--:--:--</span></div>
+        <div>ZONE <span data-t="zone">--</span></div>
+        <div data-t="rotate">--</div>
+      </section>
+
+      <nav class="keys" data-quiet aria-label="Display controls">
+        <button type="button" data-key="l"><kbd>L</kbd><span>Light</span></button>
+        <button type="button" data-key="d"><kbd>D</kbd><span>Dark</span></button>
+        <button type="button" data-key="g"><kbd>G</kbd><span>Green</span></button>
+        <button type="button" data-key="r"><kbd>R</kbd><span>CRT</span></button>
+        <button type="button" data-key="n"><kbd>N</kbd><span>Next</span></button>
+      </nav>
+    </main>
+
+    <p class="fallback" hidden>DCC needs WebGL2. Try a current Chrome, Edge, Firefox or Safari.</p>
+<script type="module">
+(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),t.credentials=e.crossOrigin===`use-credentials`?`include`:e.crossOrigin===`anonymous`?`omit`:`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();var e=96,t=54,n=256,r=3,i=.08,a=class{cdf=new Uint8Array(n);luma=0;motion=0;ctx;smooth=new Float32Array(n).map((e,t)=>t/255);hist=new Float32Array(n);prev=null;cur=new Float32Array(5184);constructor(){let n=document.createElement(`canvas`);n.width=e,n.height=t;let r=n.getContext(`2d`,{willReadFrequently:!0});if(!r)throw Error(`2D context unavailable`);this.ctx=r}update(a){this.ctx.drawImage(a,0,0,e,t);let o=this.ctx.getImageData(0,0,e,t).data;this.hist.fill(0);let s=0,c=0;for(let e=0;e<5184;e++){let t=(.2126*o[e*4]+.7152*o[e*4+1]+.0722*o[e*4+2])/255;this.cur[e]=t,s+=t,this.prev&&(c+=Math.abs(t-this.prev[e])),this.hist[Math.min(255,Math.floor(t*n))]++}let l=5184;this.luma=s/l,this.motion=this.prev?c/l:0,this.prev=this.prev??new Float32Array(l),this.prev.set(this.cur);let u=r*l/n,d=0;for(let e=0;e<n;e++)this.hist[e]>u&&(d+=this.hist[e]-u,this.hist[e]=u);let f=d/n,p=0;for(let e=0;e<n;e++){p+=this.hist[e]+f;let t=p/l;this.smooth[e]+=(t-this.smooth[e])*i,this.cdf[e]=Math.round(Math.min(1,Math.max(0,this.smooth[e]))*255)}}},o=e=>e.charCodeAt(0)-32,s=` .,:;'\`-_~^"=+*<>!/\\|()[]{}#%@`,c=[`|`,`/`,`-`,`\\`],l=`ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace`;function u(e,t){let n=document.createElement(`canvas`);n.width=e*95,n.height=t;let r=n.getContext(`2d`,{willReadFrequently:!0});if(!r)throw Error(`2D context unavailable`);r.fillStyle=`#000`,r.fillRect(0,0,n.width,n.height),r.fillStyle=`#fff`,r.font=`${Math.floor(Math.min(t*.8,e/.6*.98))}px ${l}`,r.textAlign=`center`,r.textBaseline=`middle`;for(let n=0;n<95;n++)r.fillText(String.fromCharCode(32+n),n*e+e/2,t*.54);let i=r.getImageData(0,0,n.width,n.height).data,a=new Float32Array(570);for(let r=0;r<95;r++)for(let o=0;o<3;o++)for(let s=0;s<2;s++){let c=r*e+Math.floor(s*e/2),l=r*e+Math.floor((s+1)*e/2),u=Math.floor(o*t/3),d=Math.floor((o+1)*t/3),f=0;for(let e=u;e<d;e++)for(let t=c;t<l;t++)f+=i[(e*n.width+t)*4];a[r*6+o*2+s]=f/(255*(l-c)*(d-u))}let c=[...new Set(s)].map(o),u=0;for(let e of c){let t=0;for(let n=0;n<6;n++)t+=a[e*6+n];u=Math.max(u,t/6)}let d=u>0?1/u:1,f=e=>Math.round(Math.min(1,e*d)*255),p=c.length,m=new Uint8Array(p*2*4);return c.forEach((e,t)=>{let n=t=>f(a[e*6+t]);m.set([n(0),n(1),n(2),e],t*4),m.set([n(3),n(4),n(5),0],(p+t)*4)}),{canvas:n,cellW:e,cellH:t,matchTable:m,matchCount:p}}var d=`#version 300 es
+precision highp float;
+precision highp int;
+
+#define MAX_TRAIL 48
+#define MAX_PING 6
+#define MAX_QUIET 8
+#define MAX_MATCH 96
+#define SPARKS 18
+
+uniform sampler2D uScene;       // current scene at 2x3 samples per cell
+uniform sampler2D uSceneNext;   // incoming scene during a transition
+uniform float uMix;             // < 0: no transition; 0..1: share of cells switched over
+uniform sampler2D uCdf;         // 256x1 equalization curve for the current scene
+uniform sampler2D uMatch;       // glyph table, 2 rows: (tl, tr, ml, index) and (mr, bl, br, -)
+uniform int uMatchN;
+uniform ivec4 uLines;           // glyph indices for | / - and backslash
+uniform int uGlyphCount;
+
+uniform ivec2 uGrid;            // cols, rows
+uniform vec2 uCell;             // css px per cell
+uniform vec2 uView;             // css px covered by the grid
+uniform float uNow;             // seconds
+uniform float uLight;           // 1: light paper, darks print as ink. 0: dark paper, brights glow
+uniform vec3 uAccent;
+
+uniform vec4 uTrail[MAX_TRAIL]; // x, y, born, radius
+uniform int uTrailN;
+uniform float uTrailLife;
+uniform vec4 uPing[MAX_PING];   // x, y, born, radius
+uniform int uPingN;
+uniform float uBlastTime;
+uniform vec4 uQuiet[MAX_QUIET]; // x0, y0, x1, y1 rectangles the field stays out of
+uniform int uQuietN;
+uniform float uFeather;
+
+layout(location = 0) out vec4 outCell;  // glyph / 255, glyph alpha, colour share, 1
+layout(location = 1) out vec4 outTint;  // tint rgb, tile (background) alpha
+
+float hash(ivec2 p) {
+  uvec2 q = uvec2(p) * uvec2(1597334673u, 3812015801u);
+  uint n = (q.x ^ q.y) * 1597334673u;
+  return float(n) / 4294967295.0;
+}
+
+float valueNoise(vec2 p) {
+  ivec2 i = ivec2(floor(p));
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + ivec2(1, 0)), f.x),
+             mix(hash(i + ivec2(0, 1)), hash(i + ivec2(1, 1)), f.x), f.y);
+}
+
+// Each cell's own dropout threshold, half white noise and half clumped noise, so masked
+// edges fray in irregular clusters instead of a square cut or a salt-and-pepper fringe.
+float dropout(ivec2 cell) {
+  return 0.55 * hash(cell + ivec2(17, 3)) + 0.45 * valueNoise(vec2(cell) * vec2(0.17, 0.31));
+}
+
+float boxDistance(vec2 p, vec4 r) {
+  vec2 c = 0.5 * (r.xy + r.zw);
+  vec2 h = 0.5 * (r.zw - r.xy);
+  vec2 d = abs(p - c) - h;
+  return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+
+float luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+// The cell's hue at full strength with saturation pushed up; grey falls back to the accent.
+vec3 vivid(vec3 rgb, float sat) {
+  float peak = max(max(rgb.r, rgb.g), rgb.b);
+  if (peak < 1e-3 || sat < 0.12) return uAccent;
+  vec3 hue = rgb / peak;
+  return clamp(mix(vec3(luma(hue)), hue, 1.7), 0.0, 1.0);
+}
+
+// Equalized brightness to ink. Light paper prints the darkest half like a print; dark paper
+// lights the brightest ~58% like an engraving. uLight crossfades during a theme change.
+float inkFor(float eq) {
+  float print = pow(1.0 - smoothstep(0.0, 0.46, eq), 1.4);
+  float glow = smoothstep(0.4, 0.92, eq);
+  return mix(glow, print, uLight);
+}
+
+vec3 sampleScene(vec2 p, bool next) {
+  vec2 uv = clamp(p / uView, vec2(0.0), vec2(1.0));
+  return next ? textureLod(uSceneNext, uv, 0.0).rgb : textureLod(uScene, uv, 0.0).rgb;
+}
+
+void main() {
+  ivec2 frag = ivec2(gl_FragCoord.xy);
+  ivec2 cell = ivec2(frag.x, uGrid.y - 1 - frag.y);
+  vec2 px = (vec2(cell) + 0.5) * uCell;
+
+  // ---- Masks: screen edges and quiet zones dissolve per cell -------------------------
+  float m = 1.0;
+  vec2 edge = min(px, uView - px);
+  m *= smoothstep(0.0, uFeather * 1.6, min(edge.x, edge.y * 1.4));
+  for (int k = 0; k < MAX_QUIET; k++) {
+    if (k >= uQuietN) break;
+    m *= smoothstep(0.0, uFeather, boxDistance(px, uQuiet[k]));
+  }
+  float th = dropout(cell);
+  bool keep = m > th * 0.98 + 0.01;
+  float fringe = smoothstep(th, th + 0.3, m); // survivors near a mask print lighter
+
+  // ---- Click blasts: fragments thrown outward, broken cells, sparks ------------------
+  float brk = 0.0;
+  float spark = 0.0;
+  vec2 push = vec2(0.0);
+  for (int k = 0; k < MAX_PING; k++) {
+    if (k >= uPingN) break;
+    vec4 p = uPing[k];
+    float t = (uNow - p.z) / uBlastTime;
+    if (t < 0.0 || t > 1.0) continue;
+    int seed = int(fract(p.z * 13.37) * 10000.0);
+    vec2 d = px - p.xy;
+    float dist = length(d);
+    vec2 dir = dist > 1e-3 ? d / dist : vec2(0.0);
+    float travel = 1.0 - pow(1.0 - t, 3.0);
+    float ragged = 0.7 + 0.6 * hash(cell + ivec2(seed, 41));
+    float front = p.w * (0.35 + 0.9 * travel) * ragged;
+    float hit = 1.0 - smoothstep(front * 0.55, front, dist);
+    float settle = (1.0 - t) * (1.0 - t);
+    brk = max(brk, hit * settle);
+    push += dir * p.w * 0.5 * travel * hit * (1.0 - t);
+    for (int s = 0; s < SPARKS; s++) {
+      if (t > mix(0.4, 1.0, hash(ivec2(seed + s * 7, 5)))) continue;
+      float a = 6.2831853 * hash(ivec2(s * 13 + 1, seed));
+      float reach = mix(1.0, 2.8, hash(ivec2(seed + 3, s * 5)));
+      vec2 at = p.xy + vec2(cos(a), sin(a)) * p.w * reach * travel;
+      if (ivec2(floor(at / uCell)) == cell) spark = 1.0;
+    }
+  }
+
+  // ---- Six samples per cell (2 wide, 3 tall), equalized, mapped to ink ---------------
+  bool next = uMix >= 0.0 && uMix > th;
+  float decode = uMix >= 0.0 ? 1.0 - smoothstep(0.0, 0.035, abs(uMix - th)) : 0.0;
+
+  float s[6];
+  vec3 rgb = vec3(0.0);
+  vec2 sub = uCell / vec2(2.0, 3.0);
+  vec2 origin = px - push - 0.5 * uCell + 0.5 * sub;
+  for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < 2; i++) {
+      vec3 c = sampleScene(origin + vec2(float(i), float(j)) * sub, next);
+      rgb += c;
+      float l = clamp(luma(c), 0.0, 1.0);
+      float eq = textureLod(uCdf, vec2(l * (255.0 / 256.0) + 0.5 / 256.0, 0.5), 0.0).r;
+      s[j * 2 + i] = inkFor(eq);
+    }
+  }
+  rgb /= 6.0;
+
+  // ---- Pointer trail: fading, shrinking stamps merged as a soft union ----------------
+  float clear = 1.0;
+  for (int k = 0; k < MAX_TRAIL; k++) {
+    if (k >= uTrailN) break;
+    vec4 g = uTrail[k];
+    float life = clamp(1.0 - (uNow - g.z) / uTrailLife, 0.0, 1.0);
+    if (life <= 0.0) continue;
+    float r = g.w * mix(0.35, 1.0, life);
+    float w = 1.0 - smoothstep(r * 0.35, r, length(px - g.xy));
+    clear *= 1.0 - w * life;
+  }
+  float glow = (1.0 - clear) * smoothstep(0.0, 0.4, m);
+
+  float mean = 0.0;
+  float mx = 0.0;
+  for (int k = 0; k < 6; k++) {
+    s[k] = min(1.0, s[k] + glow * 0.55); // density boost where the trail passes
+    mean += s[k];
+    mx = max(mx, s[k]);
+  }
+  mean /= 6.0;
+
+  // ---- Glyph choice -------------------------------------------------------------------
+  int glyph = 0;
+  float gx = ((s[1] + s[3] + s[5]) - (s[0] + s[2] + s[4])) / 3.0;
+  float gy = ((s[4] + s[5]) - (s[0] + s[1])) * 0.5;
+  float grad = length(vec2(gx, gy));
+
+  if (grad > 0.3 && mx > 0.3 && glow < 0.15) {
+    // Contour: a stroke along the edge tangent, picked from the gradient angle.
+    float a = mod(atan(gy, gx), 3.14159265);
+    int q = int(floor(a / 0.78539816 + 0.5)) % 4;
+    glyph = q == 0 ? uLines.x : q == 1 ? uLines.y : q == 2 ? uLines.z : uLines.w;
+  } else {
+    // Shape match against each glyph's measured 2x3 coverage. Under the trail, match the
+    // flat mean instead, so the lift reads as solid fill rather than shape.
+    float v[6];
+    for (int k = 0; k < 6; k++) v[k] = glow > 0.15 ? mean : s[k];
+    float best = 1e9;
+    for (int k = 0; k < MAX_MATCH; k++) {
+      if (k >= uMatchN) break;
+      vec4 a = texelFetch(uMatch, ivec2(k, 0), 0);
+      vec4 b = texelFetch(uMatch, ivec2(k, 1), 0);
+      vec3 d0 = vec3(v[0], v[1], v[2]) - a.xyz;
+      vec3 d1 = vec3(v[3], v[4], v[5]) - b.xyz;
+      float e = dot(d0, d0) + dot(d1, d1);
+      if (e < best) {
+        best = e;
+        glyph = int(a.w * 255.0 + 0.5);
+      }
+    }
+  }
+
+  float alpha = glyph == 0 ? 0.0 : mix(0.4, 1.0, mx) * mix(0.55, 1.0, fringe);
+
+  // ---- Colour -------------------------------------------------------------------------
+  float peak = max(max(rgb.r, rgb.g), rgb.b);
+  float low = min(min(rgb.r, rgb.g), rgb.b);
+  float sat = peak > 1e-3 ? (peak - low) / peak : 0.0;
+  vec3 tint = vivid(rgb, sat);
+  // Emissive detail (status lights, the sun) keeps its colour; the trail recolours whatever
+  // it crosses with the scene's own hue, or the accent over grey.
+  float share = max(smoothstep(0.35, 0.7, sat) * smoothstep(0.3, 0.7, peak), glow);
+  float tile = glow * mix(0.36, 0.26, uLight);
+
+  // ---- Scene change: cells flicker through random glyphs as they cross over ------------
+  if (decode > 0.0) {
+    int tick = int(uNow * 24.0);
+    if (hash(cell + ivec2(tick * 5, 211)) < decode * 0.6) {
+      glyph = 1 + int(hash(cell + ivec2(tick * 3, 77)) * float(uGlyphCount - 1));
+      alpha = 0.9;
+      share = 1.0;
+      tint = uAccent;
+    }
+  }
+
+  // ---- Blast overrides --------------------------------------------------------------
+  if (brk > 0.02 || spark > 0.0) {
+    int tick = int(uNow * 20.0);
+    float roll = hash(cell + ivec2(tick * 13, 517));
+    if (spark > 0.0 || roll < brk * 0.7) {
+      glyph = 1 + int(hash(cell + ivec2(tick * 7, 99)) * float(uGlyphCount - 1));
+      alpha = 1.0;
+      share = 1.0;
+      tint = vivid(rgb, sat);
+      tile = max(tile, 0.2 * brk + 0.3 * spark);
+    } else if (roll < brk * 0.9) {
+      glyph = 0; // knocked out: empty cell, tile and all
+      alpha = 0.0;
+      tile = 0.0;
+    }
+  }
+
+  if (!keep) {
+    glyph = 0;
+    alpha = 0.0;
+    tile = 0.0;
+  }
+
+  outCell = vec4(float(glyph) / 255.0, alpha, share, 1.0);
+  outTint = vec4(tint, tile);
+}
+`,f=`#version 300 es
+precision highp float;
+precision highp int;
+
+uniform sampler2D uCells;  // from pass A: glyph, alpha, colour share
+uniform sampler2D uTint;   // from pass A: tint rgb, tile alpha
+uniform sampler2D uAtlas;  // one row of glyphs, uCellDev pixels each
+uniform ivec2 uGrid;
+uniform ivec2 uCellDev;    // device px per cell, integral so glyph texels map 1:1
+uniform ivec2 uDev;        // canvas size in device px
+uniform vec3 uPaper;
+uniform vec3 uInk;
+uniform float uLight;
+
+out vec4 outColor;
+
+void main() {
+  ivec2 p = ivec2(int(gl_FragCoord.x), uDev.y - 1 - int(gl_FragCoord.y));
+  ivec2 cell = p / uCellDev;
+  if (cell.x >= uGrid.x || cell.y >= uGrid.y) {
+    outColor = vec4(uPaper, 1.0);
+    return;
+  }
+  ivec2 local = p - cell * uCellDev;
+  ivec2 tc = ivec2(cell.x, uGrid.y - 1 - cell.y);
+  vec4 c = texelFetch(uCells, tc, 0);
+  vec4 t = texelFetch(uTint, tc, 0);
+  int g = int(c.x * 255.0 + 0.5);
+  float coverage = texelFetch(uAtlas, ivec2(g * uCellDev.x + local.x, local.y), 0).r;
+
+  vec3 background = mix(uPaper, t.rgb, t.a);
+  // On light paper a tint prints as a deeper shade so it still reads as ink.
+  vec3 glyphColour = mix(uInk, t.rgb * mix(1.0, 0.5, uLight), c.z);
+  outColor = vec4(mix(background, glyphColour, coverage * c.y), 1.0);
+}
+`,p=`#version 300 es
+precision highp float;
+
+uniform sampler2D uSource;
+uniform vec2 uOutput;      // device px
+uniform float uScanPitch;  // device px per emulated scanline
+
+out vec4 outColor;
+
+const float hardScan = -8.0;
+const float hardPix = -3.0;
+const float maskDark = 0.5;
+const float maskLight = 1.5;
+const float shadowMask = 3.0;
+const float brightBoost = 1.0;
+const float hardBloomPix = -1.5;
+const float hardBloomScan = -2.0;
+const float bloomAmount = 0.15;
+const float shape = 2.0;
+
+vec2 SourceSize;
+
+float ToLinear1(float c) { return (c <= 0.04045) ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4); }
+vec3 ToLinear(vec3 c) { return vec3(ToLinear1(c.r), ToLinear1(c.g), ToLinear1(c.b)); }
+float ToSrgb1(float c) { return (c < 0.0031308 ? c * 12.92 : 1.055 * pow(c, 0.41666) - 0.055); }
+vec3 ToSrgb(vec3 c) { return vec3(ToSrgb1(c.r), ToSrgb1(c.g), ToSrgb1(c.b)); }
+
+// Nearest emulated sample given floating point position and texel offset.
+vec3 Fetch(vec2 pos, vec2 off) {
+  pos = (floor(pos * SourceSize + off) + vec2(0.5, 0.5)) / SourceSize;
+  return ToLinear(brightBoost * texture(uSource, pos).rgb);
+}
+
+// Distance in emulated pixels to nearest texel.
+vec2 Dist(vec2 pos) {
+  pos = pos * SourceSize;
+  return -((pos - floor(pos)) - vec2(0.5));
+}
+
+// 1D Gaussian.
+float Gaus(float pos, float scale) { return exp2(scale * pow(abs(pos), shape)); }
+
+// 3-tap Gaussian filter along horz line.
+vec3 Horz3(vec2 pos, float off) {
+  vec3 b = Fetch(pos, vec2(-1.0, off));
+  vec3 c = Fetch(pos, vec2(0.0, off));
+  vec3 d = Fetch(pos, vec2(1.0, off));
+  float dst = Dist(pos).x;
+  float scale = hardPix;
+  float wb = Gaus(dst - 1.0, scale);
+  float wc = Gaus(dst + 0.0, scale);
+  float wd = Gaus(dst + 1.0, scale);
+  return (b * wb + c * wc + d * wd) / (wb + wc + wd);
+}
+
+// 5-tap Gaussian filter along horz line.
+vec3 Horz5(vec2 pos, float off) {
+  vec3 a = Fetch(pos, vec2(-2.0, off));
+  vec3 b = Fetch(pos, vec2(-1.0, off));
+  vec3 c = Fetch(pos, vec2(0.0, off));
+  vec3 d = Fetch(pos, vec2(1.0, off));
+  vec3 e = Fetch(pos, vec2(2.0, off));
+  float dst = Dist(pos).x;
+  float scale = hardPix;
+  float wa = Gaus(dst - 2.0, scale);
+  float wb = Gaus(dst - 1.0, scale);
+  float wc = Gaus(dst + 0.0, scale);
+  float wd = Gaus(dst + 1.0, scale);
+  float we = Gaus(dst + 2.0, scale);
+  return (a * wa + b * wb + c * wc + d * wd + e * we) / (wa + wb + wc + wd + we);
+}
+
+// 7-tap Gaussian filter along horz line.
+vec3 Horz7(vec2 pos, float off) {
+  vec3 a = Fetch(pos, vec2(-3.0, off));
+  vec3 b = Fetch(pos, vec2(-2.0, off));
+  vec3 c = Fetch(pos, vec2(-1.0, off));
+  vec3 d = Fetch(pos, vec2(0.0, off));
+  vec3 e = Fetch(pos, vec2(1.0, off));
+  vec3 f = Fetch(pos, vec2(2.0, off));
+  vec3 g = Fetch(pos, vec2(3.0, off));
+  float dst = Dist(pos).x;
+  float scale = hardBloomPix;
+  float wa = Gaus(dst - 3.0, scale);
+  float wb = Gaus(dst - 2.0, scale);
+  float wc = Gaus(dst - 1.0, scale);
+  float wd = Gaus(dst + 0.0, scale);
+  float we = Gaus(dst + 1.0, scale);
+  float wf = Gaus(dst + 2.0, scale);
+  float wg = Gaus(dst + 3.0, scale);
+  return (a * wa + b * wb + c * wc + d * wd + e * we + f * wf + g * wg) /
+         (wa + wb + wc + wd + we + wf + wg);
+}
+
+// Return scanline weight.
+float Scan(vec2 pos, float off) { return Gaus(Dist(pos).y + off, hardScan); }
+
+// Return scanline weight for bloom.
+float BloomScan(vec2 pos, float off) { return Gaus(Dist(pos).y + off, hardBloomScan); }
+
+// Allow nearest three lines to effect pixel.
+vec3 Tri(vec2 pos) {
+  vec3 a = Horz3(pos, -1.0);
+  vec3 b = Horz5(pos, 0.0);
+  vec3 c = Horz3(pos, 1.0);
+  float wa = Scan(pos, -1.0);
+  float wb = Scan(pos, 0.0);
+  float wc = Scan(pos, 1.0);
+  return a * wa + b * wb + c * wc;
+}
+
+// Small bloom.
+vec3 Bloom(vec2 pos) {
+  vec3 a = Horz5(pos, -2.0);
+  vec3 b = Horz7(pos, -1.0);
+  vec3 c = Horz7(pos, 0.0);
+  vec3 d = Horz7(pos, 1.0);
+  vec3 e = Horz5(pos, 2.0);
+  float wa = BloomScan(pos, -2.0);
+  float wb = BloomScan(pos, -1.0);
+  float wc = BloomScan(pos, 0.0);
+  float wd = BloomScan(pos, 1.0);
+  float we = BloomScan(pos, 2.0);
+  return a * wa + b * wb + c * wc + d * wd + e * we;
+}
+
+// Stretched VGA style shadow mask (shadowMask 3 in the original).
+vec3 Mask(vec2 pos) {
+  vec3 mask = vec3(maskDark, maskDark, maskDark);
+  pos.x += pos.y * 3.0;
+  pos.x = fract(pos.x * 0.166666666);
+  if (pos.x < 0.333) mask.r = maskLight;
+  else if (pos.x < 0.666) mask.g = maskLight;
+  else mask.b = maskLight;
+  return mask;
+}
+
+void main() {
+  SourceSize = vec2(uOutput.x, uOutput.y / uScanPitch);
+  vec2 pos = gl_FragCoord.xy / uOutput;
+  vec3 colour = Tri(pos);
+  colour += Bloom(pos) * bloomAmount;
+  colour *= Mask(gl_FragCoord.xy * 1.000001);
+  outColor = vec4(ToSrgb(colour), 1.0);
+}
+`,m=`#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;function h(e,t,n){let r=e.createShader(t);if(!r)throw Error(`createShader failed`);if(e.shaderSource(r,n),e.compileShader(r),!e.getShaderParameter(r,e.COMPILE_STATUS)){let t=e.getShaderInfoLog(r);throw e.deleteShader(r),Error(`Shader compile failed:\n${t}`)}return r}var g=class{handle;gl;locations=new Map;constructor(e,t){this.gl=e;let n=e.createProgram();if(e.attachShader(n,h(e,e.VERTEX_SHADER,m)),e.attachShader(n,h(e,e.FRAGMENT_SHADER,t)),e.linkProgram(n),!e.getProgramParameter(n,e.LINK_STATUS))throw Error(`Program link failed:\n${e.getProgramInfoLog(n)}`);this.handle=n}use(){return this.gl.useProgram(this.handle),this}loc(e){let t=this.locations.get(e);return t===void 0&&(t=this.gl.getUniformLocation(this.handle,e),this.locations.set(e,t)),t}f1(e,t){return this.gl.uniform1f(this.loc(e),t),this}f2(e,t,n){return this.gl.uniform2f(this.loc(e),t,n),this}f3(e,t){return this.gl.uniform3f(this.loc(e),t[0],t[1],t[2]),this}i1(e,t){return this.gl.uniform1i(this.loc(e),t),this}i2(e,t,n){return this.gl.uniform2i(this.loc(e),t,n),this}i4(e,t,n,r,i){return this.gl.uniform4i(this.loc(e),t,n,r,i),this}f4v(e,t){return this.gl.uniform4fv(this.loc(`${e}[0]`),t),this}tex(e,t,n){let r=this.gl;return r.activeTexture(r.TEXTURE0+t),r.bindTexture(r.TEXTURE_2D,n),r.uniform1i(this.loc(e),t),this}};function _(e,t,n,r={}){let i=e.createTexture();e.bindTexture(e.TEXTURE_2D,i),e.texImage2D(e.TEXTURE_2D,0,r.internal??e.RGBA8,t,n,0,r.format??e.RGBA,r.type??e.UNSIGNED_BYTE,null);let a=r.filter??e.NEAREST;return e.texParameteri(e.TEXTURE_2D,e.TEXTURE_MIN_FILTER,a),e.texParameteri(e.TEXTURE_2D,e.TEXTURE_MAG_FILTER,a),e.texParameteri(e.TEXTURE_2D,e.TEXTURE_WRAP_S,e.CLAMP_TO_EDGE),e.texParameteri(e.TEXTURE_2D,e.TEXTURE_WRAP_T,e.CLAMP_TO_EDGE),i}function v(e,t,n,r,i){let a=e.createFramebuffer();e.bindFramebuffer(e.FRAMEBUFFER,a);let o=[],s=[];for(let a=0;a<r;a++){let r=_(e,t,n,{filter:i});e.framebufferTexture2D(e.FRAMEBUFFER,e.COLOR_ATTACHMENT0+a,e.TEXTURE_2D,r,0),o.push(r),s.push(e.COLOR_ATTACHMENT0+a)}e.drawBuffers(s);let c=e.checkFramebufferStatus(e.FRAMEBUFFER);if(c!==e.FRAMEBUFFER_COMPLETE)throw Error(`Framebuffer incomplete: ${c}`);return e.bindFramebuffer(e.FRAMEBUFFER,null),{fbo:a,textures:o,width:t,height:n}}function ee(e,t){if(t){for(let n of t.textures)e.deleteTexture(n);e.deleteFramebuffer(t.fbo)}}var te={w:7,h:12},ne=class{gl;grid;cells;compose;crt;vao;sceneTex;nextTex;cdfTex;atlasTex=null;matchTex=null;atlas=null;cellTarget=null;composeTarget=null;cellDevW=0;cellDevH=0;canvas;constructor(e){this.canvas=e;let t=e.getContext(`webgl2`,{antialias:!1,alpha:!1});if(!t)throw Error(`WebGL2 is not available in this browser.`);this.gl=t,this.cells=new g(t,d),this.compose=new g(t,f),this.crt=new g(t,p),this.vao=t.createVertexArray(),this.sceneTex=_(t,1,1,{filter:t.LINEAR}),this.nextTex=_(t,1,1,{filter:t.LINEAR}),this.cdfTex=_(t,256,1,{internal:t.R8,format:t.RED,filter:t.LINEAR})}resize(e,t,n){let r=this.gl,i=Math.max(4,Math.round(te.w*n)),a=Math.max(7,Math.round(te.h*n)),o=Math.round(e*n),s=Math.round(t*n);this.canvas.width=o,this.canvas.height=s;let c=i/n,l=a/n,d=Math.ceil(e/c),f=Math.ceil(t/l);return this.grid={cols:d,rows:f,cellW:c,cellH:l,viewW:d*c,viewH:f*l,sampleW:d*2,sampleH:f*3},(i!==this.cellDevW||a!==this.cellDevH||!this.atlas)&&(this.cellDevW=i,this.cellDevH=a,this.uploadAtlas(u(i,a))),ee(r,this.cellTarget),ee(r,this.composeTarget),this.cellTarget=v(r,d,f,2),this.composeTarget=v(r,o,s,1,r.LINEAR),this.grid}uploadAtlas(e){let t=this.gl;this.atlas=e,this.atlasTex&&t.deleteTexture(this.atlasTex),this.matchTex&&t.deleteTexture(this.matchTex),this.atlasTex=_(t,e.canvas.width,e.canvas.height),t.texImage2D(t.TEXTURE_2D,0,t.RGBA8,t.RGBA,t.UNSIGNED_BYTE,e.canvas),this.matchTex=_(t,e.matchCount,2),t.pixelStorei(t.UNPACK_ALIGNMENT,1),t.texSubImage2D(t.TEXTURE_2D,0,0,0,e.matchCount,2,t.RGBA,t.UNSIGNED_BYTE,e.matchTable)}render(e){let t=this.gl,n=this.grid,r=this.atlas,i=this.cellTarget,a=this.composeTarget;if(!r||!i||!a||!this.atlasTex||!this.matchTex)return;t.bindVertexArray(this.vao),t.pixelStorei(t.UNPACK_ALIGNMENT,1),t.bindTexture(t.TEXTURE_2D,this.sceneTex),t.texImage2D(t.TEXTURE_2D,0,t.RGBA8,t.RGBA,t.UNSIGNED_BYTE,e.scene),e.next&&(t.bindTexture(t.TEXTURE_2D,this.nextTex),t.texImage2D(t.TEXTURE_2D,0,t.RGBA8,t.RGBA,t.UNSIGNED_BYTE,e.next)),t.bindTexture(t.TEXTURE_2D,this.cdfTex),t.texSubImage2D(t.TEXTURE_2D,0,0,0,256,1,t.RED,t.UNSIGNED_BYTE,e.cdf),t.bindFramebuffer(t.FRAMEBUFFER,i.fbo),t.viewport(0,0,n.cols,n.rows),this.cells.use().tex(`uScene`,0,this.sceneTex).tex(`uSceneNext`,1,e.next?this.nextTex:this.sceneTex).tex(`uCdf`,2,this.cdfTex).tex(`uMatch`,3,this.matchTex).f1(`uMix`,e.mix).i1(`uMatchN`,r.matchCount).i4(`uLines`,...c.map(o)).i1(`uGlyphCount`,95).i2(`uGrid`,n.cols,n.rows).f2(`uCell`,n.cellW,n.cellH).f2(`uView`,n.viewW,n.viewH).f1(`uNow`,e.now).f1(`uLight`,e.light).f3(`uAccent`,e.palette.accent).f4v(`uTrail`,e.trail.subarray(0,192)).i1(`uTrailN`,Math.min(e.trailCount,48)).f1(`uTrailLife`,e.trailLife).f4v(`uPing`,e.pings.subarray(0,24)).i1(`uPingN`,Math.min(e.pingCount,6)).f1(`uBlastTime`,e.blastTime).f4v(`uQuiet`,e.quiet.subarray(0,32)).i1(`uQuietN`,Math.min(e.quietCount,8)).f1(`uFeather`,56),t.drawArrays(t.TRIANGLES,0,3);let s=this.canvas.width,l=this.canvas.height;t.bindFramebuffer(t.FRAMEBUFFER,e.crt?a.fbo:null),t.viewport(0,0,s,l),this.compose.use().tex(`uCells`,0,i.textures[0]).tex(`uTint`,1,i.textures[1]).tex(`uAtlas`,2,this.atlasTex).i2(`uGrid`,n.cols,n.rows).i2(`uCellDev`,this.cellDevW,this.cellDevH).i2(`uDev`,s,l).f3(`uPaper`,e.palette.paper).f3(`uInk`,e.palette.ink).f1(`uLight`,e.light),t.drawArrays(t.TRIANGLES,0,3),e.crt&&(t.bindFramebuffer(t.FRAMEBUFFER,null),this.crt.use().tex(`uSource`,0,a.textures[0]).f2(`uOutput`,s,l).f1(`uScanPitch`,Math.max(2,Math.round(1.5*(s/this.canvas.clientWidth||1)))),t.drawArrays(t.TRIANGLES,0,3))}},y=.9,b=48,re=7,ie=.08,ae=150,oe=class{trail=new Float32Array(192);pings=new Float32Array(24);trailCount=0;pingCount=0;x=-1;y=-1;inside=!1;lastMove=-1/0;lastStamp={x:0,y:0,t:-1/0};stamps=[];blasts=[];clock;constructor(e,t){this.clock=t,e.addEventListener(`pointermove`,e=>this.move(e.clientX,e.clientY,e.pointerType)),e.addEventListener(`pointerdown`,e=>{e.button===0&&(this.move(e.clientX,e.clientY,e.pointerType),this.blast(e.clientX,e.clientY))}),e.addEventListener(`pointerleave`,()=>{this.inside=!1}),e.addEventListener(`pointerup`,e=>{e.pointerType!==`mouse`&&(this.inside=!1)})}move(e,t,n){let r=this.clock(),i=Math.hypot(e-this.x,t-this.y);if(this.x=e,this.y=t,this.inside=!0,this.lastMove=r,Math.hypot(e-this.lastStamp.x,t-this.lastStamp.y)>=re){let a=b*(n===`touch`?1.3:1)*(1+Math.min(i/160,.3));this.stamp(e,t,r,a)}}stamp(e,t,n,r){this.stamps.push([e,t,n,r]),this.stamps.length>48&&this.stamps.shift(),this.lastStamp={x:e,y:t,t:n}}blast(e,t){this.blasts.push([e,t,this.clock(),ae]),this.blasts.length>6&&this.blasts.shift()}update(e){this.inside&&e-this.lastStamp.t>ie&&this.stamp(this.x,this.y,e,b),this.stamps=this.stamps.filter(t=>e-t[2]<1),this.blasts=this.blasts.filter(t=>e-t[2]<y),this.trailCount=this.stamps.length,this.stamps.forEach((e,t)=>this.trail.set(e,t*4)),this.pingCount=this.blasts.length,this.blasts.forEach((e,t)=>this.pings.set(e,t*4))}},se=class{title;kind;canvas=document.createElement(`canvas`);ctx;scene;constructor(e){this.scene=e,this.title=e.title,this.kind=e.kind;let t=this.canvas.getContext(`2d`);if(!t)throw Error(`2D context unavailable`);this.ctx=t}frame(e,t,n,r,i){(this.canvas.width!==r||this.canvas.height!==i)&&(this.canvas.width=r,this.canvas.height=i);let a=this.ctx;return a.setTransform(r/t,0,0,i/n,0,0),this.scene.draw(a,t,n,e),this.canvas}};function x(e,t){let n=e>t*1.1;return{cx:n?e*.68:e*.5,cy:n?t*.5:t*.6,size:n?Math.min(e*.5,t*.9):Math.min(e*.9,t*.55)}}var S=e=>()=>{e=e+1831565813|0;let t=Math.imul(e^e>>>15,1|e);return t=t+Math.imul(t^t>>>7,61|t)^t,((t^t>>>14)>>>0)/4294967296},ce=[{normal:[0,0,1],u:[1,0,0],v:[0,1,0],completion:.94,hue:`#4f6f8f`,lit:`#7fd4ff`},{normal:[1,0,0],u:[0,0,-1],v:[0,1,0],completion:.81,hue:`#6a6f86`,lit:`#a9b8ff`},{normal:[0,0,-1],u:[-1,0,0],v:[0,1,0],completion:.67,hue:`#6c7a6a`,lit:`#9cff9a`},{normal:[-1,0,0],u:[0,0,1],v:[0,1,0],completion:.45,hue:`#7f705c`,lit:`#ffc46b`},{normal:[0,1,0],u:[1,0,0],v:[0,0,-1],completion:.22,hue:`#80625f`,lit:`#ff8d72`},{normal:[0,-1,0],u:[1,0,0],v:[0,0,1],completion:0,hue:`#55585e`,lit:`#55585e`}],C=(()=>{let e=[-.45,.7,.55],t=Math.hypot(...e);return[e[0]/t,e[1]/t,e[2]/t]})();function w([e,t,n],r,i){let a=Math.cos(r),o=Math.sin(r),s=t*a-n*o,c=t*o+n*a,l=Math.cos(i),u=Math.sin(i);return[e*l+c*u,s,-e*u+c*l]}var le=(e,t,n)=>{let r=Math.sin(e*127.1+t*311.7+n*74.7)*43758.5453;return r-Math.floor(r)};function T(e,t){let n=parseInt(e.slice(1),16),r=e=>Math.round(Math.min(255,(n>>e&255)*t));return`rgb(${r(16)},${r(8)},${r(0)})`}var ue={title:`DATA CUBE`,kind:`DATASET`,draw(e,t,n,r){let i=e.createRadialGradient(t*.6,n*.45,0,t*.6,n*.45,Math.max(t,n)*.75);i.addColorStop(0,`#7a7e85`),i.addColorStop(1,`#6a6e74`),e.fillStyle=i,e.fillRect(0,0,t,n);let a=x(t,n),o=a.size*.27,s=.45+Math.sin(r*.23)*.25,c=r*.35;e.fillStyle=`rgba(0,0,0,0.35)`,e.beginPath(),e.ellipse(a.cx,a.cy+o*1.55,o*1.4,o*.28,0,0,Math.PI*2),e.fill();let l=e=>{let t=w(e,s,c),n=4/(4-t[2]);return[a.cx+t[0]*o*n,a.cy-t[1]*o*n]},u=ce.map((e,t)=>({f:e,index:t,n:w(e.normal,s,c)})).filter(({n:e})=>e[2]>.02).sort((e,t)=>e.n[2]-t.n[2]);for(let{f:t,index:n,n:r}of u){let i=.25+.75*Math.max(0,r[0]*C[0]+r[1]*C[1]+r[2]*C[2]),a=(e,n)=>[t.normal[0]+t.u[0]*e+t.v[0]*n,t.normal[1]+t.u[1]*e+t.v[1]*n,t.normal[2]+t.u[2]*e+t.v[2]*n],o=(t,n,r,i)=>{e.beginPath();for(let[o,s]of[[t,n],[r,n],[r,i],[t,i]]){let[t,n]=l(a(o,s));e.lineTo(t,n)}e.closePath()};o(-1,-1,1,1),e.fillStyle=T(t.hue,i*1.1),e.fill();let s=.08;for(let r=0;r<4;r++)for(let a=0;a<4;a++)o(-1+2*r/4+s,-1+2*a/4+s,-1+2*(r+1)/4-s,-1+2*(a+1)/4-s),e.fillStyle=le(n,r,a)<t.completion?T(t.lit,.55+.45*i):T(t.hue,i*.45),e.fill()}e.lineJoin=`round`;let d=[[`#111315`,Math.max(7,o*.07)],[`#f4f4f4`,Math.max(2.5,o*.022)]];for(let[t,n]of d){e.strokeStyle=t,e.lineWidth=n;for(let{f:t}of u){e.beginPath();for(let[n,r]of[[-1,-1],[1,-1],[1,1],[-1,1]]){let[i,a]=l([t.normal[0]+t.u[0]*n+t.v[0]*r,t.normal[1]+t.u[1]*n+t.v[1]*r,t.normal[2]+t.u[2]*n+t.v[2]*r]);e.lineTo(i,a)}e.closePath(),e.stroke()}}}},de=(()=>{let e=S(91);return Array.from({length:5},()=>({x:.08+e()*.9,depth:.35+e()*.65,arms:[e()<.8?.35+e()*.25:-1,e()<.7?.45+e()*.25:-1]})).sort((e,t)=>e.depth-t.depth)})();function E(e,t,n,r,i,a){e.beginPath(),e.moveTo(0,a);for(let i=0;i<=t;i+=4)e.lineTo(i,n-r(i/t));e.lineTo(t,a),e.closePath(),e.fillStyle=i,e.fill()}function fe(e,t,n,r,i){let a=r*.13;e.fillStyle=`#0d0a0c`,e.beginPath(),e.roundRect(t-a/2,n-r,a,r,a/2),e.fill(),i.forEach((i,o)=>{if(i<0)return;let s=o===0?-1:1,c=n-r*i,l=r*.22,u=r*.3,d=a*.75;e.beginPath(),e.roundRect(Math.min(t,t+s*l),c-d/2,l,d,d/2),e.fill(),e.beginPath(),e.roundRect(t+s*l-d/2,c-u,d,u,d/2),e.fill()})}var pe={title:`PHOENIX TERRAIN`,kind:`LANDSCAPE`,draw(e,t,n,r){let i=n*.6,a=e.createLinearGradient(0,0,0,i);a.addColorStop(0,`#5f7596`),a.addColorStop(.6,`#b98278`),a.addColorStop(1,`#dcaa7c`),e.fillStyle=a,e.fillRect(0,0,t,i);let o=t*.7,s=Math.min(t,n)*.13,c=i-s*(.55+.1*Math.sin(r*.15)),l=e.createRadialGradient(o,c,s*.8,o,c,s*3);l.addColorStop(0,`rgba(255,214,140,0.3)`),l.addColorStop(1,`rgba(255,214,140,0)`),e.fillStyle=l,e.fillRect(0,0,t,i),e.fillStyle=`#fffbea`,e.beginPath(),e.arc(o,c,s,0,Math.PI*2),e.fill(),e.strokeStyle=`#9c5a46`,e.lineWidth=s*.12,e.stroke(),e.fillStyle=`#8a3a28`;for(let t=0;t<4;t++){let n=c+s*(.15+t*.22);e.fillRect(o-s,n,s*2,s*(.05+t*.03))}E(e,t,i,e=>n*(.06+.03*Math.sin(e*9)+.02*Math.sin(e*23)),`#a07c8c`,i),E(e,t,i,e=>{let t=Math.exp(-(((e-.34)/.07)**2))*.17,r=Math.exp(-(((e-.47)/.035)**2))*.1,i=Math.exp(-(((e-.4)/.16)**2))*.06;return n*(t+r+i+.015)},`#3b2534`,i),E(e,t,i+n*.02,e=>n*(.025+.02*Math.sin(e*5+1)),`#22161f`,i+n*.03);let u=e.createLinearGradient(0,i,0,n);u.addColorStop(0,`#e0b98c`),u.addColorStop(1,`#b98a62`),e.fillStyle=u,e.fillRect(0,i+n*.02,t,n),e.strokeStyle=`#3a2620`;let d=r*.12%1;for(let r=0;r<14;r++){let a=(r+d)/14,o=i+n*.03+(n-i)*a*a;e.lineWidth=1+a*5,e.beginPath();for(let i=0;i<=t;i+=8){let t=Math.sin(i*.012+r*1.7)*a*n*.012;e.lineTo(i,o+t)}e.stroke()}e.lineWidth=2;for(let r=-8;r<=8;r++)e.beginPath(),e.moveTo(o+r*t*.02,i+n*.03),e.lineTo(o+r*t*.2,n),e.stroke();for(let r of de){let a=i+n*.03+(n-i)*r.depth*r.depth;fe(e,r.x*t,a,n*.32*r.depth,r.arms)}}},D={green:`#3cff6b`,amber:`#ffb21e`,red:`#ff3b2f`,blue:`#38a6ff`};function me(e,t){let n=S(e),r=[],i=1;for(;i<t-1;){let e=n(),a=e<.15?1:e<.6?2:e<.85?3:4;if(i+a>t-1)break;let o=n(),s=a===1?o<.6?`switch`:`blank`:o<.2?`blank`:o<.5?`storage`:`server`,c=s===`blank`?[]:Array.from({length:s===`switch`?6:3},(e,t)=>{let r=n();return{color:t===0?D.green:r<.08?D.red:r<.25?D.amber:r<.35?D.blue:D.green,rate:.6+n()*3,phase:n(),duty:.3+n()*.6}});r.push({y:i,u:a,kind:s,leds:c}),i+=a}return r}var he=me(7,42),ge=me(23,42);function O(e,t,n,r,i,a,o,s){let c=(i-r*.08)/42,l=t+r*.07,u=r*.86,d=n+r*.04;e.fillStyle=`#121418`,e.fillRect(t,n,r,i),e.fillStyle=`#07080a`,e.fillRect(l,d,u,c*42);for(let t of a){let n=d+t.y*c,r=t.u*c-1.5;if(t.kind===`blank`)e.fillStyle=`#23262b`,e.fillRect(l,n,u,r);else{if(e.fillStyle=t.kind===`switch`?`#5e646c`:`#6c727a`,e.fillRect(l,n,u,r),e.fillStyle=`#a7adb5`,e.fillRect(l,n,u,Math.max(1.5,c*.12)),t.kind===`server`){e.fillStyle=`#15171a`;for(let t=l+u*.05;t<l+u*.42;t+=7)e.fillRect(t,n+r*.25,3.5,r*.6);e.fillStyle=`#8e959e`;for(let t=0;t<4;t++){let i=l+u*(.48+t*.1);e.fillRect(i,n+r*.22,u*.085,r*.62)}}else if(t.kind===`storage`){e.fillStyle=`#9aa1aa`;let i=Math.max(1,t.u-1);for(let t=0;t<12;t++)for(let a=0;a<i;a++)e.fillRect(l+u*(.05+t*.075),n+r*(.2+a*.7/i),u*.06,r*.6/i)}else{e.fillStyle=`#0d0f12`;for(let t=0;t<24;t++)e.fillRect(l+u*(.08+t*.032),n+r*.3,u*.022,r*.45)}t.leds.forEach((t,i)=>{if(!((o*t.rate+t.phase)%1<t.duty))return;let a=l+u*(.93-i*.035),s=n+r*.5,d=Math.max(3,c*.45),f=e.createRadialGradient(a,s,0,a,s,d*2.2);f.addColorStop(0,t.color),f.addColorStop(1,`rgba(0,0,0,0)`),e.fillStyle=f,e.fillRect(a-d*2.2,s-d*2.2,d*4.4,d*4.4)})}}if(s){let t=d+o%6/6*c*42,n=e.createLinearGradient(0,t-c*3,0,t+c*3);n.addColorStop(0,`rgba(255,255,255,0)`),n.addColorStop(.5,`rgba(255,255,255,0.45)`),n.addColorStop(1,`rgba(255,255,255,0)`),e.fillStyle=n,e.fillRect(l,t-c*3,u,c*6)}}var _e={title:`SERVER RACK`,kind:`HARDWARE`,draw(e,t,n,r){e.fillStyle=`#585c62`,e.fillRect(0,0,t,n);let i=n*.9;e.fillStyle=`#2a2d31`,e.fillRect(0,i,t,n-i),e.strokeStyle=`#4b5057`,e.lineWidth=2;for(let r=-10;r<=10;r++)e.beginPath(),e.moveTo(t/2+r*t*.06,i),e.lineTo(t/2+r*t*.16,n),e.stroke();e.fillStyle=`#2e3136`,e.fillRect(0,n*.03,t,n*.025);let a=x(t,n),o=n*.84,s=Math.min(o*.34,a.size*.42),c=Math.sin(r*.25)*s*.04,l=a.cx-s*.75+c,u=n*.06;e.save(),e.globalAlpha=.85,O(e,l+s*1.1,u+o*.03,s*.92,o*.94,ge,r+3,!1),e.restore(),O(e,l,u,s,o,he,r,!0)}},ve=14,ye=1.4,k=e=>[1,3,5].map(t=>parseInt(e.slice(t,t+2),16)/255),A={light:{paper:k(`#efe8d9`),ink:k(`#080808`),accent:k(`#9bf00b`),light:1},dark:{paper:k(`#080808`),ink:k(`#e7efe8`),accent:k(`#90f910`),light:0},green:{paper:k(`#082b0b`),ink:k(`#d9f5d2`),accent:k(`#90f910`),light:0}},j={get(e){try{return localStorage.getItem(`dcc.${e}`)}catch{return null}},set(e,t){try{localStorage.setItem(`dcc.${e}`,t)}catch{}}},M=document.documentElement,N=document.getElementById(`field`),P=e=>document.querySelector(`[data-t="${e}"]`),F;try{F=new ne(N)}catch(e){throw console.error(e),document.querySelector(`.fallback`).hidden=!1,e}var be=performance.now()/1e3,I=()=>performance.now()/1e3-be,L=new oe(N,I),R=new a,z=[_e,ue,pe].map(e=>new se(e)),B=0,V=0,H=null,U=[`light`,`dark`,`green`].find(e=>e===j.get(`theme`))??`light`,W=j.get(`crt`)!==`off`,G={light:A[U].light,palette:structuredClone(A[U])};function K(e){U=e,M.dataset.theme=e,j.set(`theme`,e),xe()}function q(e){W=e,M.classList.toggle(`crt`,e),j.set(`crt`,e?`on`:`off`),xe()}function xe(){for(let e of document.querySelectorAll(`.keys button`)){let t=e.dataset.key,n=t===`l`&&U===`light`||t===`d`&&U===`dark`||t===`g`&&U===`green`||t===`r`&&W;t===`n`?e.removeAttribute(`aria-pressed`):e.setAttribute(`aria-pressed`,String(n))}}function Se(){H||={to:(B+1)%z.length,start:I()}}function Ce(e){switch(e){case`l`:return K(`light`);case`d`:return K(`dark`);case`g`:return K(`green`);case`r`:return q(!W);case`n`:return Se()}}window.addEventListener(`keydown`,e=>{e.metaKey||e.ctrlKey||e.altKey||e.repeat||Ce(e.key.toLowerCase())});for(let e of document.querySelectorAll(`.keys button`))e.addEventListener(`click`,()=>Ce(e.dataset.key??``));K(U),q(W);var we=new Float32Array(32),Te=0;function J(){let e=Math.min(window.devicePixelRatio||1,2),t=F.resize(window.innerWidth,window.innerHeight,e);P(`grid`).textContent=`${t.cols}x${t.rows}`;let n=[...document.querySelectorAll(`[data-quiet]`)].map(e=>e.getBoundingClientRect()).filter(e=>e.width>0&&e.height>0).slice(0,8);Te=n.length,n.forEach((e,t)=>we.set([e.left-12,e.top-12,e.right+12,e.bottom+12],t*4))}window.addEventListener(`resize`,J),document.fonts.ready.then(J),J();var Ee=(()=>{let e=Intl.DateTimeFormat().resolvedOptions().timeZone??`UTC`;return(e.split(`/`).pop()??e).replace(/_/g,` `).toUpperCase()})();P(`zone`).textContent=Ee;var De=new Intl.DateTimeFormat(`en-US`,{hour:`2-digit`,minute:`2-digit`,second:`2-digit`,hour12:!1,timeZoneName:`short`}),Oe=new Intl.DateTimeFormat(`en-US`,{weekday:`short`,day:`2-digit`,month:`short`}),Y=(e,t)=>String(Math.floor(e)).padStart(t,`0`),ke=e=>`${Y(e/3600,2)}:${Y(e/60%60,2)}:${Y(e%60,2)}`;function Ae(e,t){let n=performance.now(),r=()=>{let i=Math.min(1,(performance.now()-n)/450),a=Math.floor(t.length*i);e.textContent=t.slice(0,a)+[...t.slice(a)].map(e=>e===` `?` `:`#%@*+=-:/\\|<>`[Math.floor(Math.random()*13)]).join(``),i<1&&requestAnimationFrame(r)};r()}function X(e){Ae(P(`scene`),z[e].title),Ae(P(`kind`),z[e].kind)}X(B);var je=0,Me=60,Z=0,Q=I(),Ne=0;function Pe(e){if(Z++,e-Q>=.5&&(Me=Z/(e-Q),Z=0,Q=e),e-Ne<.1)return;Ne=e;let t=L.inside&&e-L.lastMove<3;P(`fps`).textContent=Y(Me+.5,2),P(`input`).textContent=t?`LIVE`:`IDLE`,P(`elapsed`).textContent=ke(e-V),P(`frame`).textContent=Y(je,6),P(`luma`).textContent=R.luma.toFixed(2),P(`motion`).textContent=`${(R.motion*100).toFixed(1).padStart(4,`0`)}%`,P(`x`).textContent=L.inside?Y(L.x,4):`----`,P(`y`).textContent=L.inside?Y(L.y,4):`----`;let n=new Date,r=De.formatToParts(n),i=e=>r.find(t=>t.type===e)?.value??``;P(`time`).textContent=`${i(`hour`)}:${i(`minute`)}:${i(`second`)} ${i(`timeZoneName`)}`;let a=[`DATE ${Oe.format(n).replace(`,`,``).toUpperCase()}`,`SESSION ${ke(e)}`,`SCENE ${B+1}/${z.length}`];P(`rotate`).textContent=a[Math.floor(e/4)%a.length]}var Fe=I();function $(){let e=I(),t=Math.min(.1,e-Fe);Fe=e;let n=F.grid;!H&&e-V>ve&&Se();let r=-1,i=null,a=z[B].frame(e-V,n.viewW,n.viewH,n.sampleW,n.sampleH);H&&(r=(e-H.start)/ye,i=z[H.to].frame(e-H.start,n.viewW,n.viewH,n.sampleW,n.sampleH),r>=1.05&&(B=H.to,V=H.start,H=null,r=-1,i=null,X(B))),R.update(i&&r>.5?i:a);let o=A[U],s=1-Math.exp(-t*8);G.light+=(o.light-G.light)*s;for(let e of[`paper`,`ink`,`accent`])G.palette[e]=G.palette[e].map((t,n)=>t+(o[e][n]-t)*s);L.update(e),F.render({now:e,scene:a,next:i,mix:r,cdf:R.cdf,light:G.light,palette:G.palette,trail:L.trail,trailCount:L.trailCount,trailLife:1,pings:L.pings,pingCount:L.pingCount,blastTime:y,quiet:we,quietCount:Te,crt:W}),je++,Pe(e),requestAnimationFrame($)}requestAnimationFrame($);
+</script>
