@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-theme="light" class="crt">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>DCC</title>
+  </head>
+  <body>
+    <canvas id="field" aria-hidden="true"></canvas>
+
+    <main class="hud">
+      <header class="brand" data-quiet>
+        <h1>DCC</h1>
+        <p class="tagline">Rack. Cube. Desert. Rendered as text.</p>
+      </header>
+
+      <section class="tele tele-system" data-quiet aria-label="System">
+        <div>DCC/CORE</div>
+        <div>BUILD 0.1.0</div>
+        <div>RENDER <span data-t="fps">--</span> FPS</div>
+        <div>GRID <span data-t="grid">--</span></div>
+        <div>INPUT <span data-t="input">IDLE</span></div>
+      </section>
+
+      <section class="tele tele-source" data-quiet aria-label="Source">
+        <div>SCENE: <span data-t="scene">--</span></div>
+        <div>CLASS: <span data-t="kind">--</span></div>
+        <div>T+ <span data-t="elapsed">00:00:00</span></div>
+        <div>FRAME <span data-t="frame">000000</span></div>
+      </section>
+
+      <section class="tele tele-signal" data-quiet aria-label="Signal">
+        <div>LUMA <span data-t="luma">0.00</span></div>
+        <div>MOTION <span data-t="motion">00.0%</span></div>
+        <div>X <span data-t="x">----</span></div>
+        <div>Y <span data-t="y">----</span></div>
+      </section>
+
+      <section class="tele tele-operator" data-quiet aria-label="Operator">
+        <div>OPERATOR</div>
+        <div>LOCAL <span data-t="time">--:--:--</span></div>
+        <div>ZONE <span data-t="zone">--</span></div>
+        <div data-t="rotate">--</div>
+      </section>
+
+      <nav class="keys" data-quiet aria-label="Display controls">
+        <button type="button" data-key="l"><kbd>L</kbd><span>Light</span></button>
+        <button type="button" data-key="d"><kbd>D</kbd><span>Dark</span></button>
+        <button type="button" data-key="g"><kbd>G</kbd><span>Green</span></button>
+        <button type="button" data-key="r"><kbd>R</kbd><span>CRT</span></button>
+        <button type="button" data-key="n"><kbd>N</kbd><span>Next</span></button>
+      </nav>
+    </main>
+
+    <p class="fallback" hidden>DCC needs WebGL2. Try a current Chrome, Edge, Firefox or Safari.</p>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
